@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Francesco Sorriento — Game Localizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0a0a0c;
+    --bg-secondary: #111114;
+    --bg-card: #16161a;
+    --bg-card-hover: #1c1c21;
+    --text-primary: #e8e6e1;
+    --text-secondary: #9a9890;
+    --text-muted: #5a5850;
+    --accent: #c8a45a;
+    --accent-dim: #9a7d3a;
+    --accent-glow: rgba(200, 164, 90, 0.12);
+    --kane: #5b8fb9;
+    --phoebe: #9b6fa0;
+    --ray: #b89a4a;
+    --lookman: #7a9a6a;
+    --poster: #c45c5c;
+    --border: rgba(255,255,255,0.06);
+    --border-accent: rgba(200, 164, 90, 0.2);
+    --success: #5a9a6a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 17px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 1.2rem 3rem;
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(10,10,12,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  nav .logo { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-primary); }
+  nav .logo span { color: var(--accent); }
+  nav .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+  nav .nav-links a { font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); text-decoration: none; transition: color 0.3s; }
+  nav .nav-links a:hover { color: var(--accent); }
+
+  /* HERO */
+  .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 8rem 3rem 4rem; max-width: 1100px; margin: 0 auto; position: relative; }
+  .hero-overline { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 1.5rem; opacity: 0; animation: fadeUp 0.8s ease forwards 0.2s; }
+  .hero h1 { font-family: 'Syne', sans-serif; font-size: clamp(3rem, 7vw, 5.5rem); font-weight: 800; line-height: 1.05; letter-spacing: -0.02em; color: var(--text-primary); margin-bottom: 2rem; opacity: 0; animation: fadeUp 0.8s ease forwards 0.4s; }
+  .hero h1 .accent { color: var(--accent); }
+  .hero-subtitle { font-size: 1.15rem; color: var(--text-secondary); max-width: 620px; margin-bottom: 3rem; opacity: 0; animation: fadeUp 0.8s ease forwards 0.6s; }
+  .language-bar { display: flex; gap: 1rem; flex-wrap: wrap; opacity: 0; animation: fadeUp 0.8s ease forwards 0.8s; }
+  .lang-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; letter-spacing: 0.08em; padding: 0.5rem 1.2rem; border: 1px solid var(--border-accent); border-radius: 2px; color: var(--accent); background: var(--accent-glow); position: relative; cursor: default; }
+  .lang-tag .tag-level { color: var(--text-muted); }
+  .lang-tag .tag-variants { display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--bg-card); border: 1px solid var(--border-accent); border-radius: 3px; padding: 0.6rem 1rem; white-space: nowrap; font-size: 0.65rem; color: var(--text-secondary); z-index: 10; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+  .lang-tag .tag-variants::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--border-accent); }
+  .lang-tag:hover .tag-variants { display: block; }
+  .hero-scroll-hint { position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 0.5rem; opacity: 0; animation: fadeUp 0.8s ease forwards 1.2s; }
+  .hero-scroll-hint span { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); }
+  .scroll-line { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--accent), transparent); animation: scrollPulse 2s ease infinite; }
+
+  /* SECTIONS */
+  section { padding: 6rem 3rem; max-width: 1100px; margin: 0 auto; }
+  .section-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border-accent); }
+  .section-title { font-family: 'Syne', sans-serif; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 700; line-height: 1.15; margin-bottom: 2rem; }
+  .subsection-title { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 1.5rem; }
+
+  /* APPROACH */
+  .approach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2rem; }
+  .approach-card { padding: 2rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; transition: all 0.3s; }
+  .approach-card:hover { background: var(--bg-card-hover); border-color: var(--border-accent); }
+  .approach-card h3 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--accent); }
+  .approach-card p { font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; }
+
+  /* MULTILATERAL */
+  .multilateral-banner { margin-top: 3rem; padding: 2.5rem; background: linear-gradient(135deg, rgba(200,164,90,0.06), rgba(200,164,90,0.02)); border: 1px solid var(--border-accent); border-radius: 3px; text-align: center; }
+  .multilateral-banner h3 { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 600; margin-bottom: 0.75rem; }
+  .multilateral-banner p { color: var(--text-secondary); font-size: 0.95rem; max-width: 650px; margin: 0 auto; }
+  .lang-flow { display: flex; align-items: center; justify-content: center; gap: 0.8rem; margin-top: 1.5rem; flex-wrap: wrap; }
+  .lang-flow .lang-node { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; padding: 0.4rem 1rem; border: 1px solid var(--border-accent); border-radius: 2px; color: var(--accent); }
+  .lang-flow .arrow { color: var(--text-muted); font-size: 1.2rem; }
+
+  /* VARIANTS */
+  .variant-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: 2rem; }
+  .variant-card { padding: 1.4rem 1.6rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; }
+  .variant-card h4 { font-family: 'Syne', sans-serif; font-size: 0.88rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; }
+  .variant-card p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+
+  /* CASE STUDY */
+  .case-study-header { display: grid; grid-template-columns: 1fr auto; gap: 3rem; align-items: start; margin-bottom: 3rem; padding-bottom: 3rem; border-bottom: 1px solid var(--border); }
+  .case-study-meta { display: flex; flex-direction: column; gap: 0.6rem; }
+  .meta-item { display: flex; gap: 1rem; font-size: 0.88rem; }
+  .meta-item .meta-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); min-width: 100px; }
+  .meta-item .meta-value { color: var(--text-secondary); }
+  .game-description { font-size: 1.05rem; color: var(--text-secondary); max-width: 700px; margin-bottom: 2rem; }
+
+  .more-info-note { margin: 1.5rem 0 0; padding: 1.2rem 1.6rem; background: var(--accent-glow); border: 1px solid var(--border-accent); border-radius: 3px; font-size: 0.9rem; color: var(--text-secondary); }
+  .more-info-note a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent-dim); transition: border-color 0.3s; }
+  .more-info-note a:hover { border-color: var(--accent); }
+
+  /* VOICE SECTION */
+  .voice-section { margin-top: 3rem; }
+  .voice-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .voice-tab { font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; padding: 1rem 1.5rem; background: none; border: none; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.3s; text-transform: uppercase; }
+  .voice-tab:hover { color: var(--text-secondary); }
+  .voice-tab.active { color: var(--text-primary); }
+  .voice-tab[data-char="kane"].active { border-bottom-color: var(--kane); }
+  .voice-tab[data-char="phoebe"].active { border-bottom-color: var(--phoebe); }
+  .voice-tab[data-char="ray"].active { border-bottom-color: var(--ray); }
+  .voice-tab[data-char="lookman"].active { border-bottom-color: var(--lookman); }
+  .voice-tab[data-char="posters"].active { border-bottom-color: var(--poster); }
+
+  .voice-panel { display: none; padding: 2.5rem 0; animation: fadeIn 0.4s ease; }
+  .voice-panel.active { display: block; }
+  .voice-profile { display: grid; grid-template-columns: 3px 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+  .voice-color-bar { border-radius: 2px; min-height: 100%; }
+  .voice-profile h3 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .voice-traits { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 1rem; text-transform: uppercase; }
+  .voice-description { color: var(--text-secondary); font-size: 0.95rem; max-width: 650px; }
+
+  .translation-example { background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 1.8rem; margin-top: 1.5rem; }
+  .translation-example + .translation-example { margin-top: 1rem; }
+  .translation-example .example-label { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.6rem; }
+  .translation-line { display: grid; grid-template-columns: 50px 1fr; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); align-items: baseline; }
+  .translation-line:last-of-type { border-bottom: none; }
+  .translation-line .lang-code { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase; }
+  .translation-line .line-text { font-size: 0.95rem; color: var(--text-primary); font-style: italic; }
+
+  .localizer-note { margin-top: 1.2rem; padding: 1rem 1.4rem; background: var(--accent-glow); border-left: 2px solid var(--accent-dim); font-size: 0.88rem; color: var(--text-secondary); }
+  .localizer-note strong { font-family: 'Syne', sans-serif; color: var(--accent); font-weight: 600; font-size: 0.78rem; letter-spacing: 0.05em; text-transform: uppercase; display: block; margin-bottom: 0.3rem; }
+
+  /* INVENTORY */
+  .inventory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+  .inventory-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; padding: 1.4rem; }
+  .inventory-item-name { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.3rem; }
+  .inventory-item-desc { font-size: 0.85rem; font-style: italic; color: var(--text-muted); margin-bottom: 0.8rem; }
+  .inventory-langs { display: flex; flex-direction: column; gap: 0.3rem; }
+  .inventory-lang-line { font-size: 0.8rem; color: var(--text-secondary); }
+  .inventory-lang-line .ilang { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-muted); margin-right: 0.5rem; text-transform: uppercase; }
+
+  /* DECISIONS */
+  .decisions-grid { display: flex; flex-direction: column; gap: 1rem; margin-top: 2rem; }
+  .decision-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; transition: border-color 0.3s; }
+  .decision-item:hover { border-color: var(--border-accent); }
+  .decision-header { padding: 1.4rem 1.8rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+  .decision-header h3 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 600; }
+  .decision-toggle { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-muted); transition: transform 0.3s; }
+  .decision-item.open .decision-toggle { transform: rotate(45deg); }
+  .decision-item.open .decision-body { max-height: 500px; }
+  .decision-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+  .decision-body-inner { padding: 0 1.8rem 1.8rem; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; }
+
+  /* TESTIMONIAL */
+  .testimonial { margin-top: 4rem; padding: 3rem; background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary)); border: 1px solid var(--border-accent); border-radius: 3px; position: relative; }
+  .testimonial::before { content: '\201C'; font-family: 'Syne', sans-serif; font-size: 6rem; color: var(--accent-dim); opacity: 0.3; position: absolute; top: 0.5rem; left: 1.5rem; line-height: 1; }
+  .testimonial-text { font-size: 1.1rem; font-style: italic; line-height: 1.8; color: var(--text-primary); margin-bottom: 0.5rem; position: relative; z-index: 1; }
+  .testimonial-translation { font-size: 0.9rem; color: var(--text-muted); font-style: italic; margin-bottom: 1.5rem; position: relative; z-index: 1; }
+  .testimonial-author { font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--accent); position: relative; z-index: 1; }
+  .testimonial-role { font-size: 0.8rem; color: var(--text-muted); position: relative; z-index: 1; }
+
+  /* BEYOND GAMES */
+  .beyond-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; margin-top: 2rem; }
+  .beyond-card { padding: 1.8rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 3px; text-align: center; }
+  .beyond-card h4 { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .beyond-card p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+
+  /* TOOLS */
+  .tools-row { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 1rem; }
+  .tool-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.06em; padding: 0.4rem 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 2px; color: var(--text-secondary); }
+
+  /* EDUCATION */
+  .education-content { display: grid; grid-template-columns: 3px 1fr; gap: 1.5rem; margin-top: 2rem; }
+  .edu-line { background: linear-gradient(to bottom, var(--accent), var(--accent-dim), transparent); border-radius: 2px; }
+  .edu-details h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 0.3rem; }
+  .edu-details .edu-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1rem; }
+  .edu-details p { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem; }
+
+  /* CONTACT */
+  .contact-section { text-align: center; padding: 6rem 3rem 8rem; }
+  .contact-section .section-label { justify-content: center; }
+  .contact-section .section-label::after { display: none; }
+  .contact-subtitle { color: var(--text-secondary); font-size: 1rem; margin-bottom: 3rem; max-width: 500px; margin-left: auto; margin-right: auto; }
+
+  /* CONTACT FORM */
+  .contact-form-wrapper { max-width: 550px; margin: 0 auto 2rem; text-align: left; }
+  .form-group { margin-bottom: 1.2rem; }
+  .form-group label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
+  .form-group input, .form-group textarea {
+    width: 100%;
+    padding: 0.9rem 1.2rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-primary);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 0.95rem;
+    transition: border-color 0.3s;
+    outline: none;
+  }
+  .form-group input:focus, .form-group textarea:focus { border-color: var(--accent-dim); }
+  .form-group textarea { resize: vertical; min-height: 120px; }
+  .form-group input::placeholder, .form-group textarea::placeholder { color: var(--text-muted); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+
+  .submit-btn {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 1rem 3rem;
+    background: var(--accent);
+    color: var(--bg-primary);
+    border: 1px solid var(--accent);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+  .submit-btn:hover { background: #d4b06a; }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* SUCCESS STATE */
+  .form-success {
+    display: none;
+    text-align: center;
+    padding: 3rem 2rem;
+    animation: fadeIn 0.5s ease;
+  }
+  .form-success.visible { display: block; }
+  .success-icon {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: rgba(90, 154, 106, 0.15);
+    border: 2px solid var(--success);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.5rem;
+    animation: successPop 0.4s ease 0.2s both;
+  }
+  .success-icon svg { width: 28px; height: 28px; color: var(--success); }
+  .success-title { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .success-text { color: var(--text-secondary); font-size: 0.95rem; }
+
+  @keyframes successPop {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .contact-divider { display: flex; align-items: center; gap: 1rem; margin: 2rem 0; max-width: 550px; margin-left: auto; margin-right: auto; }
+  .contact-divider span { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+  .contact-divider::before, .contact-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .contact-links { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; }
+  .contact-link { font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; padding: 1rem 2.5rem; border: 1px solid var(--border-accent); border-radius: 2px; color: var(--accent); text-decoration: none; background: var(--accent-glow); transition: all 0.3s; }
+  .contact-link:hover { background: rgba(200, 164, 90, 0.2); border-color: var(--accent); }
+
+  /* FOOTER */
+  footer { text-align: center; padding: 2rem; border-top: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scrollPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    nav .nav-links { gap: 1.2rem; }
+    nav .nav-links a { font-size: 0.65rem; }
+    .hero { padding: 7rem 1.5rem 4rem; }
+    section { padding: 4rem 1.5rem; }
+    .approach-grid, .variant-grid, .inventory-grid { grid-template-columns: 1fr; }
+    .beyond-grid { grid-template-columns: 1fr; }
+    .case-study-header { grid-template-columns: 1fr; }
+    .voice-tab { padding: 0.8rem 1rem; font-size: 0.7rem; }
+    .voice-profile { grid-template-columns: 1fr; }
+    .voice-color-bar { width: 100%; height: 3px; min-height: auto; }
+    .testimonial { padding: 2rem; }
+    .contact-section { padding: 4rem 1.5rem 6rem; }
+    .form-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Francesco <span>Sorriento</span></div>
+  <ul class="nav-links">
+    <li><a href="#approach">Approach</a></li>
+    <li><a href="#case-study">Work</a></li>
+    <li><a href="#background">Background</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-overline">Game Localizer · Translator · Multilingual Specialist</div>
+  <h1>Every line<br>carries weight<span class="accent">.</span><br>I make sure it <span class="accent">lands</span>.</h1>
+  <p class="hero-subtitle">Multilingual game localizer specialising in preserving atmosphere, subtext, and emotional intent across languages. I don't just translate what characters say — I translate how they <em>feel</em>.</p>
+  <div class="language-bar">
+    <span class="lang-tag">English <span class="tag-level">· native</span><span class="tag-variants">British · American · Canadian English</span></span>
+    <span class="lang-tag">Italian <span class="tag-level">· native</span><span class="tag-variants">Standard · Neapolitan heritage · Northern business Italian</span></span>
+    <span class="lang-tag">Spanish <span class="tag-level">· C2</span><span class="tag-variants">European Spanish · Latin American variant awareness</span></span>
+    <span class="lang-tag">French <span class="tag-level">· C2</span><span class="tag-variants">European French · Québécois familiarity</span></span>
+  </div>
+  <div class="hero-scroll-hint"><span>Scroll</span><div class="scroll-line"></div></div>
+</section>
+
+<!-- APPROACH -->
+<section id="approach">
+  <div class="reveal">
+    <div class="section-label">Approach</div>
+    <h2 class="section-title">Translation is interpretation.<br>Localization is <em>performance</em>.</h2>
+    <p class="game-description">Every line in a game carries weight — a pause can build tension, a word choice can shift a character's entire persona, and a fragment left unfinished can say more than a full sentence. My work is built around protecting those details.</p>
+  </div>
+  <div class="approach-grid reveal">
+    <div class="approach-card"><h3>Tone over literalism</h3><p>If a literal translation loses the emotional impact, I prioritise how the line is meant to <em>feel</em>. The player's experience matters more than a dictionary-perfect rendering.</p></div>
+    <div class="approach-card"><h3>Character voice integrity</h3><p>Each character speaks differently for a reason. I build voice profiles — cadence, register, vocabulary boundaries — and hold every line accountable to them.</p></div>
+    <div class="approach-card"><h3>Transparent decision-making</h3><p>Where a translation choice involves trade-offs, I document the reasoning and provide alternatives. No guesswork, no surprises — just clear options for the team.</p></div>
+    <div class="approach-card"><h3>Cultural fluency, not just linguistic</h3><p>Having lived and worked across the UK, Italy, Spain, and Canada, I bring native cultural instinct to register, humour, formality norms, and the small details that make dialogue feel <em>real</em>.</p></div>
+  </div>
+  <div class="multilateral-banner reveal">
+    <h3>Multilateral translation</h3>
+    <p>I work fluidly between all four of my languages without needing to route through English — meaning I can localise directly from source to target, preserving nuance that's often lost in relay translation.</p>
+    <div class="lang-flow">
+      <span class="lang-node">EN</span><span class="arrow">⇄</span><span class="lang-node">IT</span><span class="arrow">⇄</span><span class="lang-node">ES</span><span class="arrow">⇄</span><span class="lang-node">FR</span>
+    </div>
+  </div>
+  <div class="reveal" style="margin-top: 2rem;">
+    <h3 class="subsection-title" style="font-size: 1rem; margin-bottom: 1rem;">Regional &amp; variant awareness</h3>
+    <div class="variant-grid">
+      <div class="variant-card"><h4>English</h4><p>Grew up near London. Lived and worked across the UK including Bristol. Confident in British, American, and Canadian English conventions, spelling, and tone.</p></div>
+      <div class="variant-card"><h4>Italian</h4><p>Neapolitan household. Fluent in standard Italian and familiar with southern dialect differences. Worked professionally in Milan — strong grasp of northern business Italian.</p></div>
+      <div class="variant-card"><h4>Spanish</h4><p>Lived in Gran Canaria — exposed to the unique Canarian blend of European and Latin American Spanish. European Spanish is the primary studied variant, with awareness of regional differences.</p></div>
+      <div class="variant-card"><h4>French</h4><p>European French is the primary studied variant. Lived and worked in Montréal, Québec — familiar with Québécois usage, vocabulary, and cultural context.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CASE STUDY -->
+<section id="case-study">
+  <div class="reveal">
+    <div class="section-label">Case Study · Psychological Thriller</div>
+    <h2 class="section-title">The Next Stop</h2>
+    <div class="case-study-header">
+      <div>
+        <p class="game-description"><em>The Next Stop</em> is a psychological thriller focused on mystery, introspection, and emotional tension. Players navigate fragmented memories, ambiguous relationships, and an atmosphere of quiet unease. The localization needed to preserve every pause, every double meaning, and every moment where what's left unsaid matters more than what's spoken.</p>
+        <div class="more-info-note">Full translation spreadsheets, decision documentation, and additional examples available on request — <a href="#contact">get in touch</a>.</div>
+      </div>
+      <div class="case-study-meta">
+        <div class="meta-item"><span class="meta-label">Client</span><span class="meta-value">Paranoid Delusion Studios</span></div>
+        <div class="meta-item"><span class="meta-label">Source</span><span class="meta-value">English / Spanish</span></div>
+        <div class="meta-item"><span class="meta-label">Targets</span><span class="meta-value">French · Italian</span></div>
+        <div class="meta-item"><span class="meta-label">Scope</span><span class="meta-value">Full demo localization</span></div>
+        <div class="meta-item"><span class="meta-label">Deliverables</span><span class="meta-value">Translation, localizer notes, decision documentation</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARACTER VOICES -->
+  <div class="voice-section reveal">
+    <h3 class="subsection-title">Character Voice &amp; Tone Breakdown</h3>
+    <div class="voice-tabs">
+      <button class="voice-tab active" data-char="kane" onclick="switchVoice('kane')">Kane</button>
+      <button class="voice-tab" data-char="phoebe" onclick="switchVoice('phoebe')">Phoebe</button>
+      <button class="voice-tab" data-char="ray" onclick="switchVoice('ray')">Ray</button>
+      <button class="voice-tab" data-char="lookman" onclick="switchVoice('lookman')">Dr. Lookman</button>
+      <button class="voice-tab" data-char="posters" onclick="switchVoice('posters')">4th Wall Posters</button>
+    </div>
+
+    <!-- KANE -->
+    <div class="voice-panel active" id="panel-kane">
+      <div class="voice-profile"><div class="voice-color-bar" style="background: var(--kane);"></div><div><h3>Kane</h3><div class="voice-traits">Introspective · Confused · Emotional · Vulnerable</div><p class="voice-description">Kane's voice is built on fragmented thoughts, uncertainty, and fear. Short, broken cadence with simple words and ellipses that feel like thinking aloud. I deliberately avoided polished grammar — his panic and confusion need to live in the syntax itself.</p></div></div>
+      <div class="translation-example"><div class="example-label">Opening disorientation</div><div class="translation-line"><span class="lang-code">EN</span><span class="line-text">Where am I? I don't remember anything…</span></div><div class="translation-line"><span class="lang-code">FR</span><span class="line-text">Où suis-je ? Je ne me souviens de rien…</span></div><div class="translation-line"><span class="lang-code">IT</span><span class="line-text">Dove sono? Non ricordo niente…</span></div></div>
+      <div class="translation-example"><div class="example-label">Emotional escalation — profanity calibration</div><div class="translation-line"><span class="lang-code">EN</span><span class="line-text">Look, fuck... I don't even know what I'm doing on this train.</span></div><div class="translation-line"><span class="lang-code">FR</span><span class="line-text">Écoute, putain... je sais même pas ce que je fous dans ce train.</span></div><div class="translation-line"><span class="lang-code">IT</span><span class="line-text">Senti, cazzo... non so nemmeno che ci faccio su questo treno.</span></div></div>
+      <div class="localizer-note"><strong>Localizer note</strong>Kane's lines preserve ellipses and fragmented phrasing across all targets. The vulnerability is carried as much by what's left unfinished as by the words themselves. For the profanity line, FR "putain" and IT "cazzo" are natural equivalents at a medium register — matching the emotional spill without pushing into gratuitous territory.</div>
+    </div>
+
+    <!-- PHOEBE -->
+    <div class="voice-panel" id="panel-phoebe">
+      <div class="voice-profile"><div class="voice-color-bar" style="background: var(--phoebe);"></div><div><h3>Phoebe</h3><div class="voice-traits">Calm · Enigmatic · Observant · Heavy subtext</div><p class="voice-description">Phoebe's meaning sits underneath her words. Clean, controlled lines with minimal emotional decoration. The real message is always implied, never stated — short sentences, direct delivery, and an unsettling sense that she knows more than she's saying.</p></div></div>
+      <div class="translation-example"><div class="example-label">Cryptic accusation</div><div class="translation-line"><span class="lang-code">EN</span><span class="line-text">The one you left behind before you got here. The one you don't want to face.</span></div><div class="translation-line"><span class="lang-code">FR</span><span class="line-text">Celle que tu as laissée derrière toi avant d'arriver ici. Celle que tu ne veux pas affronter.</span></div><div class="translation-line"><span class="lang-code">IT</span><span class="line-text">Quella che hai lasciato indietro prima di arrivare qui. Quella che non vuoi affrontare.</span></div></div>
+      <div class="translation-example"><div class="example-label">Controlled weight — saying everything with nothing</div><div class="translation-line"><span class="lang-code">EN</span><span class="line-text">Fear, guilt... or just habit.</span></div><div class="translation-line"><span class="lang-code">FR</span><span class="line-text">La peur, la culpabilité... ou juste l'habitude.</span></div><div class="translation-line"><span class="lang-code">IT</span><span class="line-text">Paura, colpa... o semplicemente abitudine.</span></div></div>
+      <div class="localizer-note"><strong>Localizer note</strong>Phoebe's power comes from restraint. The challenge is resisting the urge to add emphasis or explanation. Each translation preserves her clipped, knowing delivery — the articles in French ("la peur, la culpabilité") add a deliberate, almost clinical distance that works perfectly for her character.</div>
+    </div>
+
+    <!-- RAY -->
+    <div class="voice-panel" id="panel-ray">
+      <div class="voice-profile"><div class="voice-color-bar" style="background: var(--ray);"></div><div><h3>Ray</h3><div class="voice-traits">Extroverted · Confident · Charismatic · Subtly evasive</div><p class="voice-description">Ray speaks with smooth, confident phrasing — friendly on the surface but always redirecting. Casual, slightly teasing language while avoiding crude slang. The charm stays intact while hinting that he's performing rather than being genuine.</p></div></div>
+      <div class="translation-example"><div class="example-label">Philosophical deflection</div><div class="translation-line"><span class="lang-code">EN</span><span class="line-text">The past is a passenger that never gets off. Secrets define you and you can't hide anything.</span></div><div class="translation-line"><span class="lang-code">FR</span><span class="line-text">Le passé est un passager qui ne descend jamais. Les secrets te définissent, et tu ne peux rien cacher.</span></div><div class="translation-line"><span class="lang-code">IT</span><span class="line-text">Il passato è un passeggero che non scende mai. I segreti ti definiscono e non puoi nascondere niente.</span></div></div>
+      <div class="translation-example"><div class="example-label">Condescending dismissal</div><div class="translation-line"><span class="lang-code">EN</span><span class="line-text">Ah, sure. Poor you. Always the victim.</span></div><div class="translation-line"><span class="lang-code">FR</span><span class="line-text">Ah, bien sûr. Pauvre petit. Toujours la victime.</span></div><div class="translation-line"><span class="lang-code">IT</span><span class="line-text">Ah, certo. Poverino. Sempre la vittima.</span></div></div>
+      <div class="localizer-note"><strong>Localizer note</strong>Ray's dismissiveness needs to feel casual, not aggressive. FR "Pauvre petit" is more belittling than a literal "Pauvre toi" — it infantilises Kane, which serves Ray's power dynamic. IT "Poverino" carries the same condescending warmth. The sarcasm reads as character, not cruelty.</div>
+    </div>
+
+    <!-- DR. LOOKMAN -->
+    <div class="voice-panel" id="panel-lookman">
+      <div class="voice-profile"><div class="voice-color-bar" style="background: var(--lookman);"></div><div><h3>Dr. Lookman</h3><div class="voice-traits">Polite surface · Professional · Disturbing underneath</div><p class="voice-description">Lookman is the most complex voice to localise. Outwardly professional and measured, but with verb choices and timing that create unease. Controlled, clinical wording with unsettling pauses before reveals — polite sentences that make you uncomfortable without ever being overtly threatening.</p></div></div>
+      <div class="translation-example"><div class="example-label">The "safe" opening — polite menace</div><div class="translation-line"><span class="lang-code">EN</span><span class="line-text">Don't worry, you're safe here... for now.</span></div><div class="translation-line"><span class="lang-code">FR</span><span class="line-text">Ne t'inquiète pas, tu es en sécurité ici... pour l'instant.</span></div><div class="translation-line"><span class="lang-code">IT</span><span class="line-text">Non preoccuparti, qui sei al sicuro... per ora.</span></div></div>
+      <div class="translation-example"><div class="example-label">Surveillance disguised as care</div><div class="translation-line"><span class="lang-code">EN</span><span class="line-text">Looks like you have to go... see you soon, I'll be watching you... Ray.</span></div><div class="translation-line"><span class="lang-code">FR</span><span class="line-text">On dirait que tu dois y aller... à bientôt. Je te surveillerai... Ray.</span></div><div class="translation-line"><span class="lang-code">IT</span><span class="line-text">Sembra che tu debba andare... a presto. Ti terrò d'occhio... Ray.</span></div></div>
+      <div class="localizer-note"><strong>Localizer note</strong>The register decision for Lookman was the most significant in the project. In real-world FR/IT therapy, "vous/Lei" is the norm. But the client chose informal "tu" — making Lookman's presence feel more intimate and invasive than professionally distant. FR "Je te surveillerai" and IT "Ti terrò d'occhio" both carry the polite-but-creepy surveillance subtext better than a neutral "I'll watch you."</div>
+    </div>
+
+    <!-- POSTERS -->
+    <div class="voice-panel" id="panel-posters">
+      <div class="voice-profile"><div class="voice-color-bar" style="background: var(--poster);"></div><div><h3>4th Wall Posters</h3><div class="voice-traits">Meta · Taunting · Direct to player · Escalating intensity</div><p class="voice-description">The game features posters that break the 4th wall and address the player directly — taunting, mocking, and creating unease outside the narrative. Without knowing the target age rating, I delivered a safe default tone and provided harder alternatives for each, giving the client the ability to dial intensity up or down without a second localization pass.</p></div></div>
+      <div class="translation-example"><div class="example-label">Default tone — taunting</div><div class="translation-line"><span class="lang-code">EN</span><span class="line-text">You're still here. How obedient... Spoiler: you're not getting any.</span></div><div class="translation-line"><span class="lang-code">FR</span><span class="line-text">T'es encore là. En manque de compliments ? Spoiler : t'en auras pas.</span></div><div class="translation-line"><span class="lang-code">IT</span><span class="line-text">Sei ancora qui. A caccia di complimenti? Spoiler: non ne avrai.</span></div></div>
+      <div class="translation-example"><div class="example-label">Harder alternative — cold and final</div><div class="translation-line"><span class="lang-code">EN</span><span class="line-text">Time rewinds. I don't. Bye.</span></div><div class="translation-line"><span class="lang-code">FR</span><span class="line-text">Le temps rembobine. Pas moi. Salut.</span></div><div class="translation-line"><span class="lang-code">IT</span><span class="line-text">Il tempo riavvolge. Io no. Ciao.</span></div></div>
+      <div class="localizer-note"><strong>Localizer note</strong>The posters required a different approach from dialogue — direct, punchy, no subtlety. I delivered each poster at a "safe" register and provided harder versions for the client to choose from. IT "riavvolge" keeps the VHS/tape-rewind meta feel; FR "rembobine" does the same. The brutally short "Pas moi. Salut." / "Io no. Ciao." lands harder in both languages than a longer construction would.</div>
+    </div>
+  </div>
+
+  <!-- INVENTORY -->
+  <div class="reveal" style="margin-top: 3rem;">
+    <h3 class="subsection-title">In-Game Items &amp; UI</h3>
+    <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1rem;">Item descriptions maintain the game's eerie tone, while item names and UI labels use standard platform conventions — keeping the "weirdness" for narrative moments and the clarity for player interface.</p>
+    <div class="inventory-grid">
+      <div class="inventory-item"><div class="inventory-item-name">Mysterious Envelope</div><div class="inventory-item-desc">"the words are there, trapped. it is not yet time to read them"</div><div class="inventory-langs"><div class="inventory-lang-line"><span class="ilang">FR</span><em>Les mots sont là, prisonniers. Pas encore le moment de les lire.</em></div><div class="inventory-lang-line"><span class="ilang">IT</span><em>Le parole sono lì, intrappolate. Non è ancora il momento di leggerle.</em></div></div></div>
+      <div class="inventory-item"><div class="inventory-item-name">UV Flashlight</div><div class="inventory-item-desc">"reveals what remains hidden to the naked eye"</div><div class="inventory-langs"><div class="inventory-lang-line"><span class="ilang">FR</span><em>Révèle ce qui reste caché à l'œil nu.</em></div><div class="inventory-lang-line"><span class="ilang">IT</span><em>Rivela ciò che resta nascosto all'occhio nudo.</em></div></div></div>
+      <div class="inventory-item"><div class="inventory-item-name">Worn Coin</div><div class="inventory-item-desc">"the edge is worn... as if someone had used it for something other than paying"</div><div class="inventory-langs"><div class="inventory-lang-line"><span class="ilang">FR</span><em>Le bord est usé... comme si quelqu'un s'en était servi pour autre chose que payer.</em></div><div class="inventory-lang-line"><span class="ilang">IT</span><em>Il bordo è consumato... come se qualcuno se ne fosse servito per qualcosa che non fosse pagare.</em></div></div></div>
+      <div class="inventory-item"><div class="inventory-item-name">Paper Fragment</div><div class="inventory-item-desc">"might fit into something bigger"</div><div class="inventory-langs"><div class="inventory-lang-line"><span class="ilang">FR</span><em>Pourrait s'emboîter dans quelque chose de plus grand.</em></div><div class="inventory-lang-line"><span class="ilang">IT</span><em>Potrebbe combaciare con qualcosa di più grande.</em></div></div></div>
+    </div>
+    <div class="localizer-note" style="margin-top: 1.2rem;"><strong>Localizer note</strong>Gender-neutral constructions were used for dynamic strings like "{0} has been added to the inventory" to avoid agreement errors when the inserted item could be any gender or number. UI labels ("save game," "inventory," "right click") follow standard platform conventions in each language.</div>
+  </div>
+
+  <!-- DECISIONS -->
+  <div class="reveal" style="margin-top: 3rem;">
+    <h3 class="subsection-title">Key Localization Decisions</h3>
+    <div class="decisions-grid">
+      <div class="decision-item"><div class="decision-header" onclick="toggleDecision(this)"><h3>Register: "tu" vs formal address</h3><span class="decision-toggle">+</span></div><div class="decision-body"><div class="decision-body-inner">FR and IT both have formal/informal distinctions that English doesn't. I defaulted to informal "tu" across all characters to keep dialogue immediate and intimate. The main exception considered was Dr. Lookman, where formal "vous/Lei" would add professional distance but informal "tu" creates a more invasive, unsettling closeness. Both alternatives were documented with reasoning — the client chose informal.</div></div></div>
+      <div class="decision-item"><div class="decision-header" onclick="toggleDecision(this)"><h3>Briefcase: ambiguity vs specificity</h3><span class="decision-toggle">+</span></div><div class="decision-body"><div class="decision-body-inner">Ray's briefcase is a recurring story object. The choice: generic terms ("mallette" / "valigetta" — ambiguous, fits mystery) vs specific ones ("ventiquattrore" in IT — explicitly an office briefcase, sharpening Ray's professional persona). I defaulted to ambiguous to serve the mystery tone. The client confirmed this preference.</div></div></div>
+      <div class="decision-item"><div class="decision-header" onclick="toggleDecision(this)"><h3>"Loop" — game language vs story language</h3><span class="decision-toggle">+</span></div><div class="decision-body"><div class="decision-body-inner">The game has time-loop mechanics. In Italian, keeping "loop" preserves a modern, meta, game-logic feel. In French, "boucle" works naturally and avoids an anglicism. I recommended keeping "loop" in IT and "boucle" in FR — respecting how each language handles borrowed terms differently. The client agreed.</div></div></div>
+      <div class="decision-item"><div class="decision-header" onclick="toggleDecision(this)"><h3>4th-wall posters: tiered intensity</h3><span class="decision-toggle">+</span></div><div class="decision-body"><div class="decision-body-inner">Without knowing the target age rating, I delivered each poster at a "safe" default and provided harder alternatives. This gave the client the ability to dial intensity up or down per poster without needing a second pass. The client opted for the harder versions.</div></div></div>
+      <div class="decision-item"><div class="decision-header" onclick="toggleDecision(this)"><h3>Gender-neutral constructions</h3><span class="decision-toggle">+</span></div><div class="decision-body"><div class="decision-body-inner">French and Italian are heavily gendered languages. Where the player character's gender isn't fixed, I restructured lines to avoid gender marking entirely. Dynamic UI strings were rewritten to be gender-safe regardless of what item name gets inserted. Where gendered forms were unavoidable, I flagged them with alternatives.</div></div></div>
+      <div class="decision-item"><div class="decision-header" onclick="toggleDecision(this)"><h3>UI vs narrative tone separation</h3><span class="decision-toggle">+</span></div><div class="decision-body"><div class="decision-body-inner">I treated UI strings differently from narrative text. Menu labels, tooltips, and system prompts use standard, conventional localization — players expect familiar terms. The atmospheric, unsettling tone was reserved for dialogue and narrative moments. This prevents player confusion while keeping the "weirdness" where it belongs.</div></div></div>
+      <div class="decision-item"><div class="decision-header" onclick="toggleDecision(this)"><h3>Deliberate inconsistency as a narrative tool</h3><span class="decision-toggle">+</span></div><div class="decision-body"><div class="decision-body-inner">In the Phoebe conversation, IT uses "arretri" (backtrack) in one line and switches to "fare marcia indietro" (reverse course) later. This isn't an error — the first feels accidental, the second feels deliberate, mirroring the shift in Phoebe's tone from observation to accusation. I documented this choice and offered a consistent alternative if the client preferred strict uniformity.</div></div></div>
+    </div>
+  </div>
+
+  <!-- TESTIMONIAL -->
+  <div class="testimonial reveal">
+    <p class="testimonial-text">Se nota muchísimo el cuidado, la sensibilidad narrativa y lo bien que has entendido el tono del juego. Ha sido un auténtico placer colaborar contigo… sin duda nos encantaría volver a colaborar en el futuro.</p>
+    <p class="testimonial-translation">"The care, the narrative sensitivity, and how well you understood the tone of the game really shows. It's been a genuine pleasure working with you… we'd love to collaborate again in the future."</p>
+    <div class="testimonial-author">Iván — Paranoid Delusion Studios</div>
+    <div class="testimonial-role">Developer, The Next Stop</div>
+  </div>
+</section>
+
+<!-- BACKGROUND -->
+<section id="background">
+  <div class="reveal">
+    <div class="section-label">Background</div>
+    <h2 class="section-title">Education &amp; Experience</h2>
+    <div class="education-content">
+      <div class="edu-line"></div>
+      <div class="edu-details">
+        <h3>BA Modern Foreign Languages (French, Spanish &amp; Italian)</h3>
+        <div class="edu-sub">University of Bristol · Final Year</div>
+        <p>Formal training across linguistic, translation, and literary modules. University-level translation projects assessed and marked by professional translators, with consistently exceptional grades from secondary school through to final year.</p>
+        <h3>International Living &amp; Working Experience</h3>
+        <div class="edu-sub">United Kingdom · Italy · Spain · Canada</div>
+        <p>Lived and worked in each country — navigating visa processes, employment documentation, and banking entirely in the local language. From a Neapolitan household near London to professional work in Milan, island life in Gran Canaria, and Montréal's bilingual culture. This is deep cultural fluency: it shows up in register choices, humour calibration, and knowing how things are <em>actually</em> said.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLS -->
+  <div class="reveal" style="margin-top: 3rem;">
+    <h3 class="subsection-title" style="font-size: 1rem;">Tools &amp; Formats</h3>
+    <div class="tools-row">
+      <span class="tool-tag">Google Sheets</span>
+      <span class="tool-tag">.csv</span>
+      <span class="tool-tag">.xlsx</span>
+      <span class="tool-tag">Spreadsheet-based pipelines</span>
+      <span class="tool-tag">Collaborative review workflows</span>
+    </div>
+    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.8rem;">Comfortable adapting to studio-specific tools and TMS platforms. Open to CAT tool workflows (memoQ, Trados, etc.) as projects require.</p>
+  </div>
+
+  <!-- BEYOND GAMES -->
+  <div class="reveal" style="margin-top: 3rem;">
+    <h3 class="subsection-title">Beyond games</h3>
+    <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem;">Games are my passion and primary focus, but my translation skills extend across formats — each one sharpening a different kind of attention.</p>
+    <div class="beyond-grid">
+      <div class="beyond-card"><h4>Literary Translation</h4><p>University-assessed literary translations across prose and poetry. Navigating style, register, and authorial voice.</p></div>
+      <div class="beyond-card"><h4>Articles &amp; Non-Fiction</h4><p>Translated journalistic and academic pieces — precision, clarity, and fidelity to source argumentation.</p></div>
+      <div class="beyond-card"><h4>Children's Literature</h4><p>Translated books for young readers. Simplicity without condescension — a different kind of voice calibration.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="contact-section">
+  <div class="reveal">
+    <div class="section-label">Get in Touch</div>
+    <h2 class="section-title">Let's work together<span style="color: var(--accent);">.</span></h2>
+    <p class="contact-subtitle">Available for game localization projects — from indie demos to full-scale releases. I'd love to hear about your game.</p>
+
+    <!-- CONTACT FORM -->
+    <div class="contact-form-wrapper" id="contactFormWrapper">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="contactName">Your Name</label>
+          <input type="text" id="contactName" placeholder="Name" required>
+        </div>
+        <div class="form-group">
+          <label for="contactEmail">Your Email</label>
+          <input type="email" id="contactEmail" placeholder="email@example.com" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="contactCompany">Studio / Company (optional)</label>
+        <input type="text" id="contactCompany" placeholder="Studio or company name">
+      </div>
+      <div class="form-group">
+        <label for="contactMessage">Message</label>
+        <textarea id="contactMessage" placeholder="Tell me about your project..." required></textarea>
+      </div>
+      <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Send Message</button>
+    </div>
+
+    <!-- SUCCESS STATE -->
+    <div class="form-success" id="formSuccess">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <div class="success-title">Message sent!</div>
+      <p class="success-text">Thanks for reaching out — I'll get back to you soon.</p>
+    </div>
+
+    <div class="contact-divider"><span>or</span></div>
+
+    <div class="contact-links">
+      <a href="https://www.linkedin.com/in/francesco-sorriento-8a5b78205" target="_blank" class="contact-link">LinkedIn</a>
+    </div>
+  </div>
+</section>
+
+<footer>&copy; 2026 Francesco Sorriento · Game Localizer</footer>
+
+<script>
+  function switchVoice(character) {
+    document.querySelectorAll('.voice-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.voice-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.voice-tab[data-char="${character}"]`).classList.add('active');
+    document.getElementById(`panel-${character}`).classList.add('active');
+  }
+
+  function toggleDecision(header) {
+    header.parentElement.classList.toggle('open');
+  }
+
+  function handleSubmit() {
+    const name = document.getElementById('contactName').value.trim();
+    const email = document.getElementById('contactEmail').value.trim();
+    const message = document.getElementById('contactMessage').value.trim();
+
+    if (!name || !email || !message) {
+      // Simple validation flash
+      if (!name) document.getElementById('contactName').style.borderColor = '#c45c5c';
+      if (!email) document.getElementById('contactEmail').style.borderColor = '#c45c5c';
+      if (!message) document.getElementById('contactMessage').style.borderColor = '#c45c5c';
+      setTimeout(() => {
+        document.querySelectorAll('.form-group input, .form-group textarea').forEach(el => el.style.borderColor = '');
+      }, 2000);
+      return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    fetch('https://formspree.io/f/xeepkdrv', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        name: name,
+        _replyto: email,
+        email: email,
+        company: document.getElementById('contactCompany').value.trim(),
+        message: message
+      })
+    }).then(response => {
+      if (response.ok) { showSuccess(); }
+      else { btn.disabled = false; btn.textContent = 'Send Message'; alert('Something went wrong. Please try again.'); }
+    }).catch(() => { btn.disabled = false; btn.textContent = 'Send Message'; alert('Something went wrong. Please try again.'); });
+  }
+
+  function showSuccess() {
+    document.getElementById('contactFormWrapper').style.display = 'none';
+    const success = document.getElementById('formSuccess');
+    success.classList.add('visible');
+  }
+
+  // Scroll reveal
+  const revealElements = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  revealElements.forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
